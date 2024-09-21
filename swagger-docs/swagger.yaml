@@ -1,0 +1,133 @@
+openapi: 3.0.0
+info:
+  title: Chatly API Gateway
+  version: 1.0.0
+  description: API Gateway for Chatly Application
+
+servers:
+  - url: 'http://localhost:3000'
+
+tags:
+  - name: Chats
+    description: API для управления чатами
+
+paths:
+  /api/auth/login:
+    post:
+      summary: User login
+      description: User login by name. If the user does not exist, it will be created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: 'testuser'
+      responses:
+        '200':
+          description: Login success
+        '201':
+          description: User created
+        '400':
+          description: Username required
+        '500':
+          description: Server error
+
+  /api/auth/logout:
+    post:
+      summary: User logout
+      description: Ending the user session.
+
+  /api/chats/create:
+    post:
+      summary: Create a new chat
+      tags: [Chats]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'General Chat'
+      responses:
+        '201':
+          description: Chat created successfully
+        '500':
+          description: Error creating chat
+
+  /api/chats:
+    get:
+      summary: Get all chats
+      tags: [Chats]
+      responses:
+        '200':
+          description: List of all chats
+        '500':
+          description: Error fetching chats
+
+  /api/chats/{chatId}/join:
+    post:
+      summary: Join a chat
+      tags: [Chats]
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+          description: Chat ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: '60f85e8c8c8c8c8c8c8c8c8'
+      responses:
+        '200':
+          description: User successfully joined the chat
+        '404':
+          description: Chat not found
+        '500':
+          description: Error joining chat
+
+  /api/chats/{chatId}/message:
+    post:
+      summary: Send a message to chat
+      tags: [Chats]
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+          description: Chat ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  example: '60f85e8c8c8c8c8c8c8c8c8'
+                content:
+                  type: string
+                  example: 'Hello, world!'
+      responses:
+        '201':
+          description: Message sent successfully
+        '404':
+          description: Chat not found
+        '500':
+          description: Error sending message

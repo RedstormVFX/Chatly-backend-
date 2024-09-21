@@ -3,21 +3,26 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const redis = require('redis');
 const RedisStore = require('connect-redis').default;
-const authRoutes = require('./routes/auth'); // Импортируем маршруты авторизации
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
-require('dotenv').config();
+const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
-const User = require('./models/User');
-const Chat = require('./models/Chat');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs'); // Import YAML for working with Swagger
+const http = require('http'); // For working with socket.io
+require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
 
+// Connect WebSocket logic
+require('./sockets/websocket')(server);
+
+// Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
+// Connect to Redis
 const redisClient = redis.createClient({
   url: 'redis://localhost:6379',
 });
@@ -34,55 +39,28 @@ app.use(
     secret: process.env.SESSION_SECRET || 'yourSecretKey',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, httpOnly: true, maxAge: 600000 }, // 10 min
+    cookie: { secure: false, httpOnly: true, maxAge: 600000 },
   })
 );
 
-(async () => {
-  const AdminJS = (await import('adminjs')).default;
-  const AdminJSExpress = (await import('@adminjs/express')).default;
-  const AdminJSMongoose = (await import('@adminjs/mongoose')).default;
-
-  AdminJS.registerAdapter(AdminJSMongoose);
-
-  const adminJs = new AdminJS({
-    databases: [mongoose],
-    rootPath: '/admin',
-    resources: [{ resource: User }, { resource: Chat }],
-  });
-
-  const adminRouter = AdminJSExpress.buildRouter(adminJs);
-  app.use(adminJs.options.rootPath, adminRouter);
-})();
-
+// Middleware for parsing JSON
 app.use(express.json());
 
+// Connect routes
 app.use('/api/auth', authRoutes);
-
 app.use('/api/chats', chatRoutes);
 
-const swaggerOptions = {
-  swaggerDefinition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Chatly API Gateway',
-      version: '1.0.0',
-      description: 'API Gateway for Chatly Application',
-    },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-      },
-    ],
-  },
-  apis: ['./routes/*.js'],
-};
+// Setup Swagger using the YAML file
+const swaggerDocument = YAML.load('./swagger-docs/swagger.yaml'); // Load swagger.yml
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-// Run server
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Log for WebSocket server startup
+server.on('listening', () => {
+  console.log(`WebSocket server running on port ${PORT}`);
 });
