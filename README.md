@@ -26,11 +26,11 @@ Before you start, ensure you have the following installed:
 Follow these steps to get the project running locally:
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/chatly-backend.git
    cd chatly-backend
    ```
-````
 
 2. **Install dependencies**
 
