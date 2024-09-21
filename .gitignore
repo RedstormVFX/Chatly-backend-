@@ -1,0 +1,16 @@
+
+logs
+*.log
+npm-debug.log*
+node_modules/
+.bower_components/
+.env
+coverage/
+dist/
+build/
+.vscode/
+.idea/
+.adminjs/
+.DS_Store
+Thumbs.db
+.npm
